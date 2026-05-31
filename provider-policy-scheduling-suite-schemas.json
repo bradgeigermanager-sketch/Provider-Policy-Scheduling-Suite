@@ -1,0 +1,728 @@
+{
+  "$id": "https://example.com/provider-policy-scheduling-suite.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Provider Policy & Scheduling Suite (Global + Local)",
+  "type": "object",
+  "properties": {
+    "globalSuite": {
+      "$ref": "#/$defs/GlobalSuite"
+    },
+    "providerLocalSuites": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/ProviderLocalSuite" }
+    },
+    "providerContracts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/ProviderContract" }
+    }
+  },
+  "required": ["globalSuite"],
+  "$defs": {
+    "Metadata": {
+      "type": "object",
+      "properties": {
+        "label": { "type": "string" },
+        "description": { "type": "string" },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    },
+
+    /* =========================
+       GLOBAL LAYER
+       ========================= */
+
+    "GlobalSuite": {
+      "type": "object",
+      "properties": {
+        "version": { "type": "string" },
+        "providerRegistry": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ProviderRegistry" }
+        },
+        "policyProfiles": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/GlobalPolicyProfile" }
+        },
+        "schedulingEngine": {
+          "$ref": "#/$defs/GlobalSchedulingEngine"
+        },
+        "measurementTriggers": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/GlobalMeasurementTrigger" }
+        },
+        "adaptiveSettings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/GlobalAdaptiveSetting" }
+        },
+        "policySelectionEngine": {
+          "$ref": "#/$defs/GlobalPolicySelectionEngine"
+        },
+        "serviceOrchestrationDAG": {
+          "$ref": "#/$defs/GlobalServiceOrchestrationDAG"
+        }
+      },
+      "required": [
+        "providerRegistry",
+        "policyProfiles",
+        "schedulingEngine",
+        "serviceOrchestrationDAG"
+      ],
+      "additionalProperties": false
+    },
+
+    "ProviderRegistry": {
+      "type": "object",
+      "properties": {
+        "providerId": { "type": "string" },
+        "name": { "type": "string" },
+        "metadata": { "$ref": "#/$defs/Metadata" },
+        "capabilities": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "operationalWindows": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/OperationalWindow" }
+        },
+        "policyProfiles": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "schedulingMode": {
+          "type": "string",
+          "enum": ["static", "dynamic", "adaptive"]
+        }
+      },
+      "required": ["providerId", "name"],
+      "additionalProperties": false
+    },
+
+    "OperationalWindow": {
+      "type": "object",
+      "properties": {
+        "start": { "type": "string", "pattern": "^[0-2][0-9]:[0-5][0-9]$" },
+        "end": { "type": "string", "pattern": "^[0-2][0-9]:[0-5][0-9]$" },
+        "days": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+          }
+        }
+      },
+      "required": ["start", "end", "days"],
+      "additionalProperties": false
+    },
+
+    "GlobalPolicyProfile": {
+      "type": "object",
+      "properties": {
+        "policyProfileId": { "type": "string" },
+        "name": { "type": "string" },
+        "metadata": { "$ref": "#/$defs/Metadata" },
+        "policies": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "selectionRules": {
+          "$ref": "#/$defs/SelectionRules"
+        }
+      },
+      "required": ["policyProfileId", "name"],
+      "additionalProperties": false
+    },
+
+    "SelectionRules": {
+      "type": "object",
+      "properties": {
+        "autoSelect": { "type": "boolean" },
+        "conditions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/MetricCondition" }
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "MetricCondition": {
+      "type": "object",
+      "properties": {
+        "metric": { "type": "string" },
+        "op": {
+          "type": "string",
+          "enum": [">", ">=", "<", "<=", "==", "!="]
+        },
+        "value": { "type": "number" },
+        "source": {
+          "type": "string",
+          "enum": ["localMetric", "globalMetric", "fused"],
+          "default": "globalMetric"
+        }
+      },
+      "required": ["metric", "op", "value"],
+      "additionalProperties": false
+    },
+
+    "GlobalSchedulingEngine": {
+      "type": "object",
+      "properties": {
+        "schedulingEngineId": { "type": "string" },
+        "mode": {
+          "type": "string",
+          "enum": ["static", "dynamic", "adaptive"]
+        },
+        "objective": { "$ref": "#/$defs/Objective" },
+        "constraints": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Constraint" }
+        }
+      },
+      "required": ["schedulingEngineId", "mode"],
+      "additionalProperties": false
+    },
+
+    "Objective": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "minimizeLatency",
+            "maximizeThroughput",
+            "balanceLoad",
+            "custom"
+          ]
+        },
+        "weights": {
+          "type": "object",
+          "additionalProperties": { "type": "number" }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+
+    "Constraint": {
+      "type": "object",
+      "properties": {
+        "constraintId": { "type": "string" },
+        "type": {
+          "type": "string",
+          "enum": ["policy", "capacity", "dependency", "latency", "custom"]
+        },
+        "expression": { "type": "string" }
+      },
+      "required": ["constraintId", "type"],
+      "additionalProperties": false
+    },
+
+    "GlobalMeasurementTrigger": {
+      "type": "object",
+      "properties": {
+        "triggerId": { "type": "string" },
+        "metric": { "type": "string" },
+        "condition": { "$ref": "#/$defs/TriggerCondition" },
+        "actions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/GlobalTriggerAction" }
+        }
+      },
+      "required": ["triggerId", "metric", "condition"],
+      "additionalProperties": false
+    },
+
+    "TriggerCondition": {
+      "type": "object",
+      "properties": {
+        "op": {
+          "type": "string",
+          "enum": [">", ">=", "<", "<=", "==", "!="]
+        },
+        "value": { "type": "number" },
+        "hysteresis": { "type": "number" },
+        "minDuration": { "type": "string" }
+      },
+      "required": ["op", "value"],
+      "additionalProperties": false
+    },
+
+    "GlobalTriggerAction": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "ActivatePolicy",
+            "AdjustSchedule",
+            "EscalateProvider",
+            "EmitSignal"
+          ]
+        },
+        "policyProfileId": { "type": "string" },
+        "providerId": { "type": "string" },
+        "payloadSchemaId": { "type": "string" }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+
+    "GlobalAdaptiveSetting": {
+      "type": "object",
+      "properties": {
+        "settingId": { "type": "string" },
+        "target": {
+          "type": "string",
+          "enum": ["samplingRate", "provider", "policy", "threshold"]
+        },
+        "adjustment": {
+          "type": "string",
+          "enum": ["increase", "decrease", "switch", "override"]
+        },
+        "conditions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/MetricCondition" }
+        }
+      },
+      "required": ["settingId", "target", "adjustment"],
+      "additionalProperties": false
+    },
+
+    "GlobalPolicySelectionEngine": {
+      "type": "object",
+      "properties": {
+        "engineId": { "type": "string" },
+        "inputs": {
+          "type": "object",
+          "properties": {
+            "metrics": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "context": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "additionalProperties": false
+        },
+        "decisionGraph": { "$ref": "#/$defs/DecisionGraph" }
+      },
+      "required": ["engineId", "decisionGraph"],
+      "additionalProperties": false
+    },
+
+    "DecisionGraph": {
+      "type": "object",
+      "properties": {
+        "nodes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/DecisionNode" }
+        },
+        "entryNodeId": { "type": "string" }
+      },
+      "required": ["nodes", "entryNodeId"],
+      "additionalProperties": false
+    },
+
+    "DecisionNode": {
+      "type": "object",
+      "properties": {
+        "nodeId": { "type": "string" },
+        "type": {
+          "type": "string",
+          "enum": ["condition", "score", "selectProfile"]
+        },
+        "expression": { "type": "string" },
+        "outputs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "on": { "type": "string" },
+              "next": { "type": "string" }
+            },
+            "required": ["on", "next"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["nodeId", "type"],
+      "additionalProperties": false
+    },
+
+    "GlobalServiceOrchestrationDAG": {
+      "type": "object",
+      "properties": {
+        "dagId": { "type": "string" },
+        "nodes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/OrchestrationNode" }
+        },
+        "edges": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/OrchestrationEdge" }
+        }
+      },
+      "required": ["dagId", "nodes", "edges"],
+      "additionalProperties": false
+    },
+
+    "OrchestrationNode": {
+      "type": "object",
+      "properties": {
+        "nodeId": { "type": "string" },
+        "type": {
+          "type": "string",
+          "enum": [
+            "ProviderAvailabilityNode",
+            "PolicyProfileNode",
+            "MeasurementEvaluationNode",
+            "AdaptiveSettingNode",
+            "FinalScheduleNode",
+            "LocalProviderBlackBoxNode"
+          ]
+        },
+        "config": { "type": "object" }
+      },
+      "required": ["nodeId", "type"],
+      "additionalProperties": false
+    },
+
+    "OrchestrationEdge": {
+      "type": "object",
+      "properties": {
+        "from": { "type": "string" },
+        "to": { "type": "string" }
+      },
+      "required": ["from", "to"],
+      "additionalProperties": false
+    },
+
+    /* =========================
+       PROVIDER-LOCAL LAYER
+       ========================= */
+
+    "ProviderLocalSuite": {
+      "type": "object",
+      "properties": {
+        "providerLocalSuiteId": { "type": "string" },
+        "providerId": { "type": "string" },
+        "version": { "type": "string" },
+        "metadata": { "$ref": "#/$defs/Metadata" },
+        "localPolicyProfiles": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/LocalPolicyProfile" }
+        },
+        "localSchedulingEngine": {
+          "$ref": "#/$defs/LocalSchedulingEngine"
+        },
+        "localMeasurementBindings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/LocalMeasurementBinding" }
+        },
+        "localMeasurementTriggers": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/LocalMeasurementTrigger" }
+        },
+        "localAdaptiveSettings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/LocalAdaptiveSetting" }
+        },
+        "localPolicySelectionEngine": {
+          "$ref": "#/$defs/LocalPolicySelectionEngine"
+        },
+        "localOrchestrationDAG": {
+          "$ref": "#/$defs/LocalServiceOrchestrationDAG"
+        }
+      },
+      "required": [
+        "providerLocalSuiteId",
+        "providerId",
+        "localSchedulingEngine",
+        "localOrchestrationDAG"
+      ],
+      "additionalProperties": false
+    },
+
+    "LocalPolicyProfile": {
+      "type": "object",
+      "properties": {
+        "localPolicyProfileId": { "type": "string" },
+        "providerId": { "type": "string" },
+        "name": { "type": "string" },
+        "scope": {
+          "type": "string",
+          "enum": ["intra-provider", "sub-service", "device", "tenant"]
+        },
+        "policies": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "selectionRules": { "$ref": "#/$defs/SelectionRules" }
+      },
+      "required": ["localPolicyProfileId", "providerId", "name"],
+      "additionalProperties": false
+    },
+
+    "LocalSchedulingEngine": {
+      "type": "object",
+      "properties": {
+        "localSchedulingEngineId": { "type": "string" },
+        "providerId": { "type": "string" },
+        "schedulingMode": {
+          "type": "string",
+          "enum": ["static", "dynamic", "adaptive"]
+        },
+        "resources": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/LocalResource" }
+        },
+        "constraints": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Constraint" }
+        },
+        "objective": { "$ref": "#/$defs/Objective" }
+      },
+      "required": [
+        "localSchedulingEngineId",
+        "providerId",
+        "schedulingMode"
+      ],
+      "additionalProperties": false
+    },
+
+    "LocalResource": {
+      "type": "object",
+      "properties": {
+        "resourceId": { "type": "string" },
+        "type": {
+          "type": "string",
+          "enum": ["subService", "queue", "device", "workerPool"]
+        },
+        "capacity": { "type": "number" },
+        "operationalWindows": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/OperationalWindow" }
+        }
+      },
+      "required": ["resourceId", "type"],
+      "additionalProperties": false
+    },
+
+    "LocalMeasurementBinding": {
+      "type": "object",
+      "properties": {
+        "localMeasurementBindingId": { "type": "string" },
+        "providerId": { "type": "string" },
+        "targetType": {
+          "type": "string",
+          "enum": ["subService", "queue", "device", "tenant"]
+        },
+        "targetId": { "type": "string" },
+        "metrics": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/LocalMetricBinding" }
+        }
+      },
+      "required": [
+        "localMeasurementBindingId",
+        "providerId",
+        "targetType",
+        "targetId"
+      ],
+      "additionalProperties": false
+    },
+
+    "LocalMetricBinding": {
+      "type": "object",
+      "properties": {
+        "metricId": { "type": "string" },
+        "metricName": { "type": "string" },
+        "sourcePackId": { "type": "string" },
+        "path": { "type": "string" },
+        "aggregation": {
+          "type": "string",
+          "enum": ["avg", "p95", "max", "min", "custom"]
+        },
+        "window": { "type": "string" }
+      },
+      "required": ["metricId", "metricName", "sourcePackId"],
+      "additionalProperties": false
+    },
+
+    "LocalMeasurementTrigger": {
+      "type": "object",
+      "properties": {
+        "localMeasurementTriggerId": { "type": "string" },
+        "providerId": { "type": "string" },
+        "metricRef": {
+          "type": "object",
+          "properties": {
+            "bindingId": { "type": "string" },
+            "metricId": { "type": "string" }
+          },
+          "required": ["bindingId", "metricId"],
+          "additionalProperties": false
+        },
+        "condition": { "$ref": "#/$defs/TriggerCondition" },
+        "actions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/LocalTriggerAction" }
+        }
+      },
+      "required": [
+        "localMeasurementTriggerId",
+        "providerId",
+        "metricRef",
+        "condition"
+      ],
+      "additionalProperties": false
+    },
+
+    "LocalTriggerAction": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "ActivateLocalPolicy",
+            "AdjustLocalSchedule",
+            "EmitGlobalSignal"
+          ]
+        },
+        "localPolicyProfileId": { "type": "string" },
+        "resourceId": { "type": "string" },
+        "adjustment": {
+          "type": "string",
+          "enum": [
+            "increaseCapacity",
+            "decreaseCapacity",
+            "reprioritize"
+          ]
+        },
+        "signalType": {
+          "type": "string",
+          "enum": ["ProviderDegradation", "ProviderHotPath", "Custom"]
+        },
+        "payloadSchemaId": { "type": "string" }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+
+    "LocalAdaptiveSetting": {
+      "type": "object",
+      "properties": {
+        "localAdaptiveSettingId": { "type": "string" },
+        "providerId": { "type": "string" },
+        "target": {
+          "type": "string",
+          "enum": [
+            "samplingRate",
+            "retryPolicy",
+            "queueDepth",
+            "concurrency",
+            "routingStrategy"
+          ]
+        },
+        "adjustment": {
+          "type": "string",
+          "enum": ["increase", "decrease", "switch", "override"]
+        },
+        "bounds": {
+          "type": "object",
+          "properties": {
+            "min": { "type": "number" },
+            "max": { "type": "number" },
+            "step": { "type": "number" }
+          },
+          "additionalProperties": false
+        },
+        "controlLoop": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["threshold", "PID", "stateMachine"]
+            },
+            "parameters": {
+              "type": "object",
+              "additionalProperties": { "type": "number" }
+            }
+          },
+          "required": ["type"],
+          "additionalProperties": false
+        },
+        "conditions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/MetricCondition" }
+        }
+      },
+      "required": [
+        "localAdaptiveSettingId",
+        "providerId",
+        "target",
+        "adjustment"
+      ],
+      "additionalProperties": false
+    },
+
+    "LocalPolicySelectionEngine": {
+      "type": "object",
+      "properties": {
+        "localPolicySelectionEngineId": { "type": "string" },
+        "providerId": { "type": "string" },
+        "inputs": {
+          "type": "object",
+          "properties": {
+            "localMetrics": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "context": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "globalSignals": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "additionalProperties": false
+        },
+        "decisionGraph": { "$ref": "#/$defs/DecisionGraph" }
+      },
+      "required": [
+        "localPolicySelectionEngineId",
+        "providerId",
+        "decisionGraph"
+      ],
+      "additionalProperties": false
+    },
+
+    "LocalServiceOrchestrationDAG": {
+      "type": "object",
+      "properties": {
+        "localServiceOrchestrationDAGId": { "type": "string" },
+        "providerId": { "type": "string" },
+        "nodes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/LocalOrchestrationNode" }
+        },
+        "edges": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/OrchestrationEdge" }
+        }
+      },
+      "required": [
+        "localServiceOrchestrationDAGId",
+        "providerId",
+        "nodes",
+        "edges"
+      ],
+      "additionalProperties": false
+    },
