@@ -1,0 +1,349 @@
+📘 Provider Policy & Scheduling Suite
+
+Human‑Readable Documentation & Glossary
+(Global + Local, Nestable Architecture)
+
+---
+
+1. System Overview
+The Provider Policy & Scheduling Suite is a two‑layer orchestration system:
+
+1. Global Layer  
+   - Manages multiple service providers.  
+   - Chooses which provider to use, when, and under what policy.  
+   - Reacts to global measurement signals and reliability.  
+   - Produces a global schedule and global policy activation.
+
+2. Local Layer (Per‑Provider)  
+   - Each provider runs its own internal version of the same system.  
+   - Manages its own sub‑services, devices, queues, tenants, etc.  
+   - Reacts to local measurement signals.  
+   - Produces a local schedule and local policy activation.
+
+These two layers are structurally identical, but operate at different scopes.  
+This makes the system nestable: a provider can contain sub‑providers, each with its own local suite.
+
+---
+
+2. Architectural Principles
+
+2.1 Declarative
+Everything is defined via JSON Schema.  
+No logic is hard‑coded; all behavior is described declaratively.
+
+2.2 DAG‑Driven
+All scheduling, policy selection, and adaptive behavior is executed through directed acyclic graphs.
+
+2.3 Measurement‑Reactive
+Measurement signals (global or local) can:
+
+- Activate policies  
+- Adjust schedules  
+- Trigger adaptive settings  
+- Emit signals to other layers  
+
+2.4 Nestable
+Any provider can contain a Local Suite, which itself can contain nested suites.
+
+---
+
+3. Global Layer Documentation
+The global layer orchestrates across providers.
+
+---
+
+3.1 Provider Registry
+A list of all providers the global system can schedule.
+
+Purpose
+- Identify providers  
+- Describe capabilities  
+- Define operational windows  
+- Attach global policy profiles  
+- Declare scheduling mode (static/dynamic/adaptive)
+
+Key Terms
+- Capabilities — what the provider can do (e.g., “compute”, “storage”, “analysis”).  
+- Operational Windows — when the provider is available.  
+- Scheduling Mode — how the provider should be scheduled globally.
+
+---
+
+3.2 Global Policy Profiles
+A policy profile is a bundle of policies that can be activated globally.
+
+Purpose
+- Group policies into selectable sets  
+- Define rules for automatic selection  
+- Bind policies to measurement conditions
+
+Key Terms
+- Selection Rules — conditions under which a policy profile becomes active.  
+- MetricCondition — a comparison against a measurement value.
+
+---
+
+3.3 Global Scheduling Engine
+The global scheduler decides:
+
+- Which provider to use  
+- When to use it  
+- Under what constraints  
+- With what objective (latency, throughput, load balance)
+
+Key Terms
+- Objective — the optimization goal.  
+- Constraint — a rule that must be satisfied (capacity, dependency, latency).
+
+---
+
+3.4 Global Measurement Triggers
+Triggers that respond to global metrics.
+
+Purpose
+- Activate global policies  
+- Adjust global schedules  
+- Escalate or deprioritize providers  
+- Emit global signals
+
+Key Terms
+- TriggerCondition — threshold, hysteresis, and minimum duration.  
+- GlobalTriggerAction — what happens when the trigger fires.
+
+---
+
+3.5 Global Adaptive Settings
+Adaptive settings modify global system behavior.
+
+Examples
+- Increase sampling rate  
+- Switch provider  
+- Override policy  
+- Adjust thresholds
+
+---
+
+3.6 Global Policy Selection Engine
+A decision graph that chooses which global policy profile is active.
+
+Purpose
+- Evaluate metrics  
+- Evaluate context  
+- Traverse a decision graph  
+- Select a policy profile
+
+---
+
+3.7 Global Service Orchestration DAG
+The DAG that ties everything together.
+
+Node Types
+- ProviderAvailabilityNode  
+- PolicyProfileNode  
+- MeasurementEvaluationNode  
+- AdaptiveSettingNode  
+- FinalScheduleNode  
+- LocalProviderBlackBoxNode (represents a provider’s local suite)
+
+---
+
+4. Local Layer Documentation
+Each provider has its own ProviderLocalSuite.
+
+---
+
+4.1 Local Policy Profiles
+Local versions of global policy profiles.
+
+Purpose
+- Control internal provider behavior  
+- Apply policies to sub‑services, devices, queues, tenants  
+- Support local selection rules
+
+---
+
+4.2 Local Scheduling Engine
+Schedules internal resources.
+
+Resource Types
+- Sub‑services  
+- Queues  
+- Devices  
+- Worker pools  
+
+Purpose
+- Allocate internal capacity  
+- Enforce internal constraints  
+- Optimize internal objectives
+
+---
+
+4.3 Local Measurement Bindings
+Bind measurement packs to internal provider entities.
+
+Purpose
+- Attach metrics to internal resources  
+- Define aggregation windows  
+- Provide inputs for triggers and adaptive settings
+
+---
+
+4.4 Local Measurement Triggers
+Local triggers respond to local metrics.
+
+Actions
+- Activate local policies  
+- Adjust local schedules  
+- Emit global signals (e.g., degradation)
+
+---
+
+4.5 Local Adaptive Settings
+Local control loops.
+
+Examples
+- Adjust concurrency  
+- Change routing strategy  
+- Modify retry policy  
+- Increase queue depth
+
+---
+
+4.6 Local Policy Selection Engine
+Local decision graph for selecting internal policy profiles.
+
+---
+
+4.7 Local Service Orchestration DAG
+The provider’s internal DAG.
+
+Node Types
+- LocalResourceAvailabilityNode  
+- LocalPolicyProfileNode  
+- LocalMeasurementEvaluationNode  
+- LocalAdaptiveSettingNode  
+- LocalFinalScheduleNode  
+- NestedLocalSuiteNode (for recursive nesting)
+
+---
+
+5. Global–Local Contract
+Defines how the global layer interacts with each provider’s local suite.
+
+Exposed Metrics
+- Effective capacity  
+- Latency bands  
+- Error rate  
+- Degradation state  
+
+Control Inputs
+- Target load  
+- Priority class  
+- Global policy hints  
+
+Local Suite Reference
+A pointer to the provider’s local suite.
+
+---
+
+6. Operational Patterns
+This section explains how the system behaves at runtime.
+
+---
+
+6.1 Pattern: Global Scheduling
+1. Global metrics are evaluated.  
+2. Global triggers fire if conditions are met.  
+3. Global policy selection engine chooses a policy profile.  
+4. Global scheduling engine computes a schedule.  
+5. Providers receive control inputs.
+
+---
+
+6.2 Pattern: Local Scheduling
+1. Local metrics are evaluated.  
+2. Local triggers fire.  
+3. Local policy selection engine chooses a local profile.  
+4. Local scheduling engine allocates internal resources.  
+5. Local suite emits metrics back to global layer.
+
+---
+
+6.3 Pattern: Adaptive Feedback Loop
+1. Measurement → Trigger  
+2. Trigger → Adaptive Setting  
+3. Adaptive Setting → System Adjustment  
+4. Adjustment → New Measurement  
+5. Loop repeats
+
+This applies globally and locally.
+
+---
+
+6.4 Pattern: Nesting
+A provider can contain a NestedLocalSuiteNode.
+
+This allows:
+
+- Sub‑providers  
+- Sub‑services with their own orchestration  
+- Recursive scheduling  
+- Multi‑level policy enforcement
+
+---
+
+7. Project‑Specific Glossary
+This glossary defines all unique terms used in the system.
+
+---
+
+ProviderLocalSuite
+A complete local orchestration system for a single provider.
+
+LocalMeasurementBinding
+A mapping between a provider’s internal resource and a measurement pack.
+
+LocalMeasurementTrigger
+A trigger that responds to local metrics.
+
+LocalAdaptiveSetting
+A local control loop that adjusts internal provider behavior.
+
+LocalPolicyProfile
+A bundle of internal policies.
+
+LocalPolicySelectionEngine
+A decision graph that selects which local policy profile is active.
+
+LocalServiceOrchestrationDAG
+The DAG that orchestrates internal provider behavior.
+
+NestedLocalSuiteNode
+A DAG node representing a nested local suite.
+
+ProviderContract
+Defines the interface between global and local layers.
+
+LocalResource
+An internal provider resource (sub‑service, queue, device, worker pool).
+
+GlobalTriggerAction / LocalTriggerAction
+Actions executed when a trigger fires.
+
+OperationalWindow
+A time window during which a provider or resource is available.
+
+SelectionRules
+Rules for selecting a policy profile.
+
+MetricCondition
+A condition comparing a metric to a value.
+
+TriggerCondition
+A condition for firing a trigger.
+
+Objective
+The optimization goal for a scheduler.
+
+Constraint
+A rule that must be satisfied during scheduling.
